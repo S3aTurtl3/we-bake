@@ -99,7 +99,7 @@ class Routes {
    *
    * @param session
    * @param _id the id of the RecipeCollection
-   * @returns recipes existing in the collection
+   * @returns recipes existing in the collection // recommended format?
    */
   @Router.get("/recipe_collections/:_id")
   async getRecipesFromCollection(session: WebSessionDoc, _id: ObjectId) {
@@ -116,6 +116,17 @@ class Routes {
   async grantUserAccessToRecipe(session: WebSessionDoc, _id: ObjectId, userId: ObjectId) {
     const user = WebSession.getUser(session);
     return user;
+  }
+
+  /**
+   *
+   * @param session
+   * @param _id the id of the collection's access control
+   * @param userId the id of the user who will be granted access to the collection
+   */
+  @Router.patch("/collection_access_controls/:_id")
+  async grantUserAccessToCollection(session: WebSessionDoc, _id: ObjectId, userId: ObjectId) {
+    const user = WebSession.getUser(session);
   }
 
   @Router.get("/friends")
