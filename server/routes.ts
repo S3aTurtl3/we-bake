@@ -1,6 +1,7 @@
 import { ObjectId } from "mongodb";
 import { Friend, User, WebSession } from "./app";
 import { ManuallyEnteredRecipe } from "./concepts/recipe";
+import { ManuallyEnteredRemark } from "./concepts/remark";
 import { UserDoc } from "./concepts/user";
 import { WebSessionDoc } from "./concepts/websession";
 import { Router, getExpressRouter } from "./framework/router";
@@ -85,7 +86,7 @@ class Routes {
   /**
    * Updates the name of the recipe collection
    *
-   * @param session
+   * @param session of a user who is the author of the recipe collection
    * @param _id the id of the recipe collection whose name will be updated
    * @param name the name of the recipe collection
    * @returns the created recipe collection object
@@ -98,7 +99,7 @@ class Routes {
   /**
    * Uses the fields of `update` to overwrite the fields in the recipe whose id is `_id`
    *
-   * @param session
+   * @param session of a user who is the author of the recipe
    * @param _id
    * @param update
    */
@@ -109,7 +110,7 @@ class Routes {
 
   /**
    *
-   * @param session
+   * @param session of a user with access to the collection
    * @param _id the id of the collection to which a recipe should be added
    * @param recipeId the id of the recipe to add to the collection
    */
@@ -120,7 +121,7 @@ class Routes {
 
   /**
    *
-   * @param session
+   * @param session of a user who is the author of a recipe collection
    * @param _id the id of the collection
    * @param recipeId the id of the recipe to remove from the collection
    */
@@ -131,7 +132,7 @@ class Routes {
 
   /**
    *
-   * @param session
+   * @param session of a user with access to the recipe collection
    * @param _id the id of the RecipeCollection
    * @returns the properties of recipes existing in the collection
    */
@@ -141,6 +142,7 @@ class Routes {
   }
 
   /**
+   *  Grants a user access to the recipe; can only be performed by author of recipe
    *
    * @param session
    * @param _id the id of the recipe's access control
@@ -154,7 +156,7 @@ class Routes {
 
   /**
    * Users with access to a collection by default have access to all recipes that are in and subsequently added to
-   * the collection
+   * the collection; can only be performed by the recipe collection author
    *
    * @param session
    * @param _id the id of the collection's access control
@@ -178,7 +180,7 @@ class Routes {
 
   /**
    * Makes it so that the user with id `userId` no longer has access to the the recipe collection corresponding
-   * to the access controller with id `_id`
+   * to the access controller with id `_id`; can only be performed by the author of the recipe collection
    *
    * @param session
    * @param _id the id of the collection's access control
@@ -191,9 +193,9 @@ class Routes {
 
   /**
    * Creates a new empty discussion thread associated with the provided recipe; all users with access to the recipe
-   * have access to the discussion thread
+   * have access to the discussion thread; can only be performed by a user with access to the recipe with id `recipeId`
    *
-   * @param session
+   * @param session of a user with access to the recipe with id `recipeId`
    * @param recipeId the id of the recipe that the discussion thread is associated with
    * @returns the id of the created discussion thread
    */
@@ -203,7 +205,7 @@ class Routes {
   }
 
   /**
-   * Returns the contents of the discussion thread
+   * Returns the contents of the discussion thread if the user making the request has access to the thread
    *
    * @param session
    * @param _id the id of the discussion thread
@@ -211,6 +213,32 @@ class Routes {
    */
   @Router.get("/discussion_threads/:_id")
   async getDiscussionThread(session: WebSessionDoc, _id: ObjectId) {
+    const user = WebSession.getUser(session);
+  }
+
+  /**
+   * Posts a comment from the user to the discussion thread if the user has access to the thread
+   *
+   * @param session of a user with access to the discussion
+   * @param discussionId the id of the discussion thread
+   * @param remark the content that will be posted to the discussion thread
+   * @returns the id of the created remark
+   */
+  @Router.post("/discussion_threads/:discussionId/remarks")
+  async addRemarkToDiscussion(session: WebSessionDoc, discussionId: ObjectId, remark: ManuallyEnteredRemark) {
+    const user = WebSession.getUser(session);
+  }
+
+  /**
+   * Removes a comment from the discussion thread
+   *
+   * @param session of a user with ownership of the recipe to which the discussion belongs
+   * @param discussionId the id of the discussion thread
+   * @param remarkId the id of the remark to remove
+   * @returns the id of the removed remark
+   */
+  @Router.delete("/discussion_threads/:discussionId/remarks/:remarkId")
+  async removeRemarkFromDiscussion(session: WebSessionDoc, discussionId: ObjectId, remarkId: ObjectId) {
     const user = WebSession.getUser(session);
   }
 
