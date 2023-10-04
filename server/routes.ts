@@ -58,16 +58,50 @@ class Routes {
   }
 
   /**
+   * Creates the recipe and its corrsesponding access controls
    *
    * @param session
    * @param recipe
-   * @returns object containing id of recipe
+   * @returns the recipe object
    */
   @Router.post("/recipes")
   async createRecipe(session: WebSessionDoc, recipe: ManuallyEnteredRecipe) {
     const user = WebSession.getUser(session);
   }
 
+  /**
+   * Creates the recipe collection and its corrsesponding access controls
+   *
+   * @param session
+   * @param name the name of the recipe collection
+   * @returns the created recipe collection object
+   */
+  @Router.post("/recipe_collections")
+  async createRecipeCollection(session: WebSessionDoc, name: string) {
+    //note: unique collection names not required
+    const user = WebSession.getUser(session);
+  }
+
+  /**
+   * Updates the name of the recipe collection
+   *
+   * @param session
+   * @param _id the id of the recipe collection whose name will be updated
+   * @param name the name of the recipe collection
+   * @returns the created recipe collection object
+   */
+  @Router.patch("/recipe_collections/:_id")
+  async updateRecipeCollectionName(session: WebSessionDoc, _id: ObjectId, name: string) {
+    const user = WebSession.getUser(session);
+  }
+
+  /**
+   * Uses the fields of `update` to overwrite the fields in the recipe whose id is `_id`
+   *
+   * @param session
+   * @param _id
+   * @param update
+   */
   @Router.patch("/recipes/:_id")
   async updateRecipe(session: WebSessionDoc, _id: ObjectId, update: Partial<ManuallyEnteredRecipe>) {
     const user = WebSession.getUser(session);
@@ -99,7 +133,7 @@ class Routes {
    *
    * @param session
    * @param _id the id of the RecipeCollection
-   * @returns recipes existing in the collection // recommended format?
+   * @returns the properties of recipes existing in the collection
    */
   @Router.get("/recipe_collections/:_id")
   async getRecipesFromCollection(session: WebSessionDoc, _id: ObjectId) {
@@ -112,20 +146,71 @@ class Routes {
    * @param _id the id of the recipe's access control
    * @param userId the id of the user who will be granted access to the recipe
    */
-  @Router.patch("/recipe_access_controls/:_id")
+  @Router.post("/recipe_access_controls/:_id/users_with_access")
   async grantUserAccessToRecipe(session: WebSessionDoc, _id: ObjectId, userId: ObjectId) {
     const user = WebSession.getUser(session);
     return user;
   }
 
   /**
+   * Users with access to a collection by default have access to all recipes that are in and subsequently added to
+   * the collection
    *
    * @param session
    * @param _id the id of the collection's access control
    * @param userId the id of the user who will be granted access to the collection
    */
-  @Router.patch("/collection_access_controls/:_id")
+  @Router.post("/collection_access_controls/:_id/users_with_access")
   async grantUserAccessToCollection(session: WebSessionDoc, _id: ObjectId, userId: ObjectId) {
+    const user = WebSession.getUser(session);
+  }
+
+  /**
+   *
+   * @param session
+   * @param _id the id of the recipe's access control
+   * @param userId the id of the user whose access will be removed from the recipe
+   */
+  @Router.delete("/recipe_access_controls/:_id/users_with_access/:userId")
+  async removeUserAccessToRecipe(session: WebSessionDoc, _id: ObjectId, userId: ObjectId) {
+    const user = WebSession.getUser(session);
+  }
+
+  /**
+   * Makes it so that the user with id `userId` no longer has access to the the recipe collection corresponding
+   * to the access controller with id `_id`
+   *
+   * @param session
+   * @param _id the id of the collection's access control
+   * @param userId the id of the user whose access will be removed from the collection
+   */
+  @Router.delete("/collection_access_controls/:_id/users_with_access/:userId")
+  async removeUserAccessToRecipeCollection(session: WebSessionDoc, _id: ObjectId, userId: ObjectId) {
+    const user = WebSession.getUser(session);
+  }
+
+  /**
+   * Creates a new empty discussion thread associated with the provided recipe; all users with access to the recipe
+   * have access to the discussion thread
+   *
+   * @param session
+   * @param recipeId the id of the recipe that the discussion thread is associated with
+   * @returns the id of the created discussion thread
+   */
+  @Router.post("/discussion_threads")
+  async startDiscussionThread(session: WebSessionDoc, recipeId: ObjectId) {
+    const user = WebSession.getUser(session);
+  }
+
+  /**
+   * Returns the contents of the discussion thread
+   *
+   * @param session
+   * @param _id the id of the discussion thread
+   * @returns the id of the created discussion thread
+   */
+  @Router.get("/discussion_threads/:_id")
+  async getDiscussionThread(session: WebSessionDoc, _id: ObjectId) {
     const user = WebSession.getUser(session);
   }
 
