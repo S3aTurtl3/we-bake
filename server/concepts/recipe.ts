@@ -1,14 +1,8 @@
 import { ObjectId } from "mongodb";
-import { BaseDoc } from "../framework/doc";
-import { TextWithMedia } from "./textwithmedia";
+import DocCollection, { BaseDoc } from "../framework/doc";
+import { MediaType } from "./helper/default_media_type";
 
 type MediaObjectId = ObjectId;
-
-class MediaUrl {
-  constructor(public readonly url: string) {}
-}
-
-type MediaType = TextWithMedia<MediaUrl>;
 
 export interface ManuallyEnteredRecipe {
   dishName: string;
@@ -19,6 +13,10 @@ export interface ManuallyEnteredRecipe {
 
 export interface RecipeDoc extends BaseDoc {
   dishName: string;
+  outputSpecification: Array<MediaType>;
+  setupRequirements: Array<MediaType>;
+  steps: Array<MediaType>;
+}
   outputSpecification: Array<MediaObjectId>;
   setupRequirements: Array<MediaObjectId>;
   steps: Array<MediaObjectId>;
