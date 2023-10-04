@@ -1,6 +1,6 @@
 import { ObjectId } from "mongodb";
-import { Friend, User, WebSession } from "./app";
-import { ManuallyEnteredRecipe } from "./concepts/recipe";
+import { Friend, Recipe, User, WebSession } from "./app";
+import { ManuallyEnteredRecipe, RecipeDoc } from "./concepts/recipe";
 import { ManuallyEnteredRemark } from "./concepts/remark";
 import { UserDoc } from "./concepts/user";
 import { WebSessionDoc } from "./concepts/websession";
@@ -67,7 +67,19 @@ class Routes {
    */
   @Router.post("/recipes")
   async createRecipe(session: WebSessionDoc, recipe: ManuallyEnteredRecipe) {
-    const user = WebSession.getUser(session);
+    return await Recipe.create(recipe);
+  }
+
+  /**
+   *
+   *
+   * @param session of a user with access to the recipe
+   * @param _id the id of the recipe
+   * @returns the properties of the recipe object
+   */
+  @Router.get("/recipes/:_id")
+  async getRecipe(session: WebSessionDoc, _id: ObjectId) {
+    return await Recipe.getRecipes({ _id });
   }
 
   /**
@@ -93,7 +105,7 @@ class Routes {
    */
   @Router.patch("/recipe_collections/:_id")
   async updateRecipeCollectionName(session: WebSessionDoc, _id: ObjectId, name: string) {
-    const user = WebSession.getUser(session);
+    Recipe;
   }
 
   /**
@@ -102,10 +114,12 @@ class Routes {
    * @param session of a user who is the author of the recipe
    * @param _id
    * @param update
+   * @return a message indicating successful update of the recipe (if successful)
    */
   @Router.patch("/recipes/:_id")
-  async updateRecipe(session: WebSessionDoc, _id: ObjectId, update: Partial<ManuallyEnteredRecipe>) {
-    const user = WebSession.getUser(session);
+  async updateRecipe(session: WebSessionDoc, _id: ObjectId, update: Partial<RecipeDoc>) {
+    // authorship is implemented and validated by the "moderation" concept
+    return await Recipe.update(_id, update);
   }
 
   /**

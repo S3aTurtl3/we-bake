@@ -1,8 +1,6 @@
-import { ObjectId } from "mongodb";
+import { Filter, ObjectId } from "mongodb";
 import DocCollection, { BaseDoc } from "../framework/doc";
 import { MediaType } from "./helper/default_media_type";
-
-type MediaObjectId = ObjectId;
 
 export interface ManuallyEnteredRecipe {
   dishName: string;
@@ -17,7 +15,29 @@ export interface RecipeDoc extends BaseDoc {
   setupRequirements: Array<MediaType>;
   steps: Array<MediaType>;
 }
-  outputSpecification: Array<MediaObjectId>;
-  setupRequirements: Array<MediaObjectId>;
-  steps: Array<MediaObjectId>;
+
+export default class RecipeManagement {
+  public readonly recipes = new DocCollection<RecipeDoc>("posts");
+
+  async create(content: ManuallyEnteredRecipe) {
+    const _id = await this.recipes.createOne({ ...content });
+    return { msg: "Recipe successfully created!", recipe: await this.recipes.readOne({ _id }) };
+  }
+
+  async getRecipes(query: Filter<RecipeDoc>) {
+    const posts = await this.recipes.readMany(query, {
+      sort: { dateUpdated: -1 },
+    });
+    return posts;
+  }
+
+  async update(_id: ObjectId, update: Partial<RecipeDoc>) {
+    await this.recipes.updateOne({ _id }, update);
+    return { msg: "Recipe successfully updated!" };
+  }
+
+  async delete(_id: ObjectId) {
+    await this.recipes.deleteOne({ _id });
+    return { msg: "Recipe deleted successfully!" };
+  }
 }
