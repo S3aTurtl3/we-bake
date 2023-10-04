@@ -12,14 +12,14 @@ type MediaType = TextWithMedia<MediaUrl>;
 
 export interface ManuallyEnteredRecipe {
   dishName: string;
-  outputSpecification: MediaType;
-  setupRequirements: MediaType;
-  steps: MediaType;
+  outputSpecification: Array<MediaType>;
+  setupRequirements: Array<MediaType>;
+  steps: Array<MediaType>;
 }
 
 export interface RecipeDoc extends BaseDoc {
   dishName: string;
-  outputSpecification: MediaObjectId;
-  setupRequirements: MediaObjectId;
-  steps: MediaObjectId;
+  outputSpecification: Array<MediaObjectId>;
+  setupRequirements: Array<MediaObjectId>;
+  steps: Array<MediaObjectId>;
 }
