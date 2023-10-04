@@ -54,28 +54,16 @@ const operations: operation[] = [
     fields: { username: "input" },
   },
   {
-    name: "Get Posts (empty for all)",
-    endpoint: "/api/posts",
+    name: "Get Recipe",
+    endpoint: "/api/recipes/:_id",
     method: "GET",
-    fields: { author: "input" },
+    fields: { _id: "input" },
   },
   {
-    name: "Create Post",
-    endpoint: "/api/posts",
+    name: "Create Recipe",
+    endpoint: "/api/recipes",
     method: "POST",
-    fields: { content: "input" },
-  },
-  {
-    name: "Update Post",
-    endpoint: "/api/posts/:id",
-    method: "PATCH",
-    fields: { id: "input", update: { content: "input", options: { backgroundColor: "input" } } },
-  },
-  {
-    name: "Delete Post",
-    endpoint: "/api/posts/:id",
-    method: "DELETE",
-    fields: { id: "input" },
+    fields: { dishName: "input", outputSpecification: "input", setupRequirements: "input", steps: "input" },
   },
 ];
 
