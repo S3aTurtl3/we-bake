@@ -63,7 +63,7 @@ const operations: operation[] = [
     name: "Create Recipe",
     endpoint: "/api/recipes",
     method: "POST",
-    fields: { dishName: "input", outputSpecification: "input", setupRequirements: "input", steps: "input" },
+    fields: { recipe: "input" }, // the lightweight front end constructs the body as follows: take the key of `fields` as a key, and entered value as value
   },
 ];
 

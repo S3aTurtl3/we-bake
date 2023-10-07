@@ -7,8 +7,6 @@ import { WebSessionDoc } from "./concepts/websession";
 import { Router, getExpressRouter } from "./framework/router";
 import Responses from "./responses";
 
-// write the specifications for all the sync (also make sfb)
-
 class Routes {
   @Router.get("/session")
   async getSessionUser(session: WebSessionDoc) {
@@ -62,12 +60,16 @@ class Routes {
    * Creates the recipe and its corrsesponding access controls
    *
    * @param session
-   * @param recipe
+   * @param recipe JSON string parsable as a ManuallyEnteredRecipe
    * @returns the recipe object
    */
   @Router.post("/recipes")
-  async createRecipe(session: WebSessionDoc, recipe: ManuallyEnteredRecipe) {
-    return await Recipe.create(recipe);
+  async createRecipe(session: WebSessionDoc, recipe: string) {
+    //TODO: assert parameters parseable as json (includes not being unded)
+    // later put in wrapper parse func that explains error
+    // TODO: type check the input fields
+    const parsedRecipe: ManuallyEnteredRecipe = JSON.parse(recipe);
+    return await Recipe.create(parsedRecipe);
   }
 
   /**
