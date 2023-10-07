@@ -17,7 +17,7 @@ export interface RecipeDoc extends BaseDoc {
 }
 
 export default class RecipeManagement {
-  public readonly recipes = new DocCollection<RecipeDoc>("posts");
+  public readonly recipes = new DocCollection<RecipeDoc>("recipes");
 
   async create(content: ManuallyEnteredRecipe) {
     const _id = await this.recipes.createOne({ ...content });
@@ -25,10 +25,10 @@ export default class RecipeManagement {
   }
 
   async getRecipes(query: Filter<RecipeDoc>) {
-    const posts = await this.recipes.readMany(query, {
+    const recipes = await this.recipes.readMany(query, {
       sort: { dateUpdated: -1 },
     });
-    return posts;
+    return recipes;
   }
 
   async update(_id: ObjectId, update: Partial<RecipeDoc>) {
