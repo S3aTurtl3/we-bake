@@ -146,7 +146,7 @@ class Routes {
    * @param recipeId the id of the recipe to remove from the collection
    */
   @Router.delete("/recipe_collections/:_id/recipes/:recipeId")
-  async removeRecipe(session: WebSessionDoc, _id: ObjectId, recipeId: ObjectId) {
+  async removeRecipeFromCollection(session: WebSessionDoc, _id: ObjectId, recipeId: ObjectId) {
     const user = WebSession.getUser(session);
   }
 
