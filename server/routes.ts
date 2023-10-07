@@ -80,8 +80,9 @@ class Routes {
    * @returns the properties of the recipe object
    */
   @Router.get("/recipes/:_id")
-  async getRecipe(session: WebSessionDoc, _id: ObjectId) {
-    return await Recipe.getRecipes({ _id });
+  async getRecipe(session: WebSessionDoc, _id: string) {
+    const parsedId: ObjectId = new ObjectId(_id); // TODO: handle _id parseable as ObjectId
+    return await Recipe.getRecipes({ _id: parsedId });
   }
 
   /**
@@ -119,9 +120,12 @@ class Routes {
    * @return a message indicating successful update of the recipe (if successful)
    */
   @Router.patch("/recipes/:_id")
-  async updateRecipe(session: WebSessionDoc, _id: ObjectId, update: Partial<RecipeDoc>) {
+  async updateRecipe(session: WebSessionDoc, _id: string, update: string) {
+    // note: it is required that update is string for lightweight front-end... else its fields (which are objects, but were rendered as strings by lightweight frontend) cant be parsed
     // authorship is implemented and validated by the "moderation" concept
-    return await Recipe.update(_id, update);
+    const parsedId: ObjectId = new ObjectId(_id);
+    const parsedUpdate: Partial<RecipeDoc> = JSON.parse(update);
+    return await Recipe.update(parsedId, parsedUpdate);
   }
 
   /**

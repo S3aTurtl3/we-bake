@@ -65,6 +65,12 @@ const operations: operation[] = [
     method: "POST",
     fields: { recipe: "input" }, // the lightweight front end constructs the body as follows: take the key of `fields` as a key, and entered value as value
   },
+  {
+    name: "Update Recipe",
+    endpoint: "/api/recipes/:_id",
+    method: "PATCH",
+    fields: { _id: "input", update: "input" }, // the lightweight front end constructs the body as follows: take the key of `fields` as a key, and entered value as value
+  },
 ];
 
 // Do not edit below here.
