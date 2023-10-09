@@ -1,7 +1,25 @@
 import { ObjectId } from "mongodb";
-import { BaseDoc } from "../framework/doc";
+import DocCollection, { BaseDoc } from "../framework/doc";
 
-export interface RecipeCollection extends BaseDoc {
+export interface RecipeCollectionDoc extends BaseDoc {
   name: string;
-  recipes: Array<ObjectId>;
+}
+
+export default class RecipeCollectionConcept {
+  public readonly collections = new DocCollection<RecipeCollectionDoc>("discussion_threads");
+
+  async createCollection(name: string) {
+    const _id = await this.collections.createOne({ name });
+    return { msg: "Collection successfully created!", threadId: _id };
+  }
+
+  async update(_id: ObjectId, update: Partial<RecipeCollectionDoc>) {
+    await this.collections.updateOne({ _id }, update);
+    return { msg: "Collection name successfully updated!" };
+  }
+
+  async deleteCollection(_id: ObjectId) {
+    await this.collections.deleteOne({ _id });
+    return { msg: "Collection deleted successfully!" };
+  }
 }

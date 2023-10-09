@@ -83,6 +83,26 @@ const operations: operation[] = [
     method: "DELETE",
     fields: { userId: "input", recipeId: "input" },
   },
+  {
+    name: "Create Recipe Collection",
+    endpoint: "/api/recipe_collections",
+    method: "POST",
+    fields: { name: "input" },
+  },
+
+  {
+    name: "Add Recipe to Collection",
+    endpoint: "/api/recipe_collections/:_id/recipes",
+    method: "PUT",
+    fields: { _id: "input", recipeId: "input" },
+  },
+
+  {
+    name: "Get Recipes in Collection",
+    endpoint: "/api/recipe_collections/:_id",
+    method: "GET",
+    fields: { _id: "input" },
+  },
 ];
 
 // Do not edit below here.

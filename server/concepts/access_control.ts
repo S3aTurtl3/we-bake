@@ -24,7 +24,7 @@ export default class AccessControlConcept {
     try {
       const controlDoc = await this.getAccessControl(user);
       const accessibleContent: ObjectId[] = controlDoc.accessibleContent.slice();
-      accessibleContent.push(userContent);
+      accessibleContent.push(userContent); // ENSURE NO DUPLICATES
       await this.recipeAccessControls.updateOne({ _id: controlDoc._id }, { accessibleContent: accessibleContent });
     } catch (e) {
       // TODO: catch only not-found errors

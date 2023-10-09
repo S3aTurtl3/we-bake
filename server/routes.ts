@@ -1,5 +1,5 @@
 import { ObjectId } from "mongodb";
-import { AccessControl, Friend, Recipe, User, WebSession } from "./app";
+import { AccessControl, Friend, ParentshipManagement, Recipe, RecipeCollectionManagement, User, WebSession } from "./app";
 import { ManuallyEnteredRecipe, RecipeDoc } from "./concepts/recipe";
 import { ManuallyEnteredRemark } from "./concepts/remark";
 import { UserDoc } from "./concepts/user";
@@ -104,6 +104,7 @@ class Routes {
   async createRecipeCollection(session: WebSessionDoc, name: string) {
     //note: unique collection names not required
     const user = WebSession.getUser(session);
+    return await RecipeCollectionManagement.createCollection(name);
   }
 
   /**
@@ -115,9 +116,7 @@ class Routes {
    * @returns the created recipe collection object
    */
   @Router.patch("/recipe_collections/:_id")
-  async updateRecipeCollectionName(session: WebSessionDoc, _id: string, name: string) {
-    Recipe;
-  }
+  async updateRecipeCollectionName(session: WebSessionDoc, _id: string, name: string) {}
 
   /**
    * Uses the fields of `update` to overwrite the fields in the recipe whose id is `_id`
@@ -144,11 +143,15 @@ class Routes {
    * @param _id the id of the collection to which a recipe should be added
    * @param recipeId the id of the recipe to add to the collection
    */
-  @Router.post("/recipe_collections/:_id/recipes")
+  @Router.put("/recipe_collections/:_id/recipes")
   async addRecipeToCollection(session: WebSessionDoc, _id: string, recipeId: string) {
     const user = WebSession.getUser(session);
     const parsedRecipeId: ObjectId = new ObjectId(recipeId); // handle unparseable
     await AccessControl.assertHasAccess(user, parsedRecipeId);
+
+    const parsedCollectionId: ObjectId = new ObjectId(_id); // handle unparseable
+    await ParentshipManagement.putParentship({ child: parsedRecipeId, parent: parsedCollectionId });
+    return { msg: "Recipe added!" };
   }
 
   /**
@@ -173,6 +176,9 @@ class Routes {
   @Router.get("/recipe_collections/:_id")
   async getRecipesFromCollection(session: WebSessionDoc, _id: string) {
     const user = WebSession.getUser(session);
+    const parsedCollectionId: ObjectId = new ObjectId(_id); // handle unparseable
+    const recipes: ObjectId[] = await ParentshipManagement.getAllChildren(parsedCollectionId);
+    return { recipes: recipes };
     // TODO: only return recipes that the user has access to
   }
 
