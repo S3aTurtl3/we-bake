@@ -71,6 +71,12 @@ const operations: operation[] = [
     method: "PATCH",
     fields: { _id: "input", update: "input" }, // the lightweight front end constructs the body as follows: take the key of `fields` as a key, and entered value as value
   },
+  {
+    name: "Grant a user access to a Recipe",
+    endpoint: "/api/recipe_access_controls/users/:userId/accessibleContent",
+    method: "PUT", // common mistake: forgetting sync this with the method defined in routes.ts -> results in 404
+    fields: { userId: "input", recipeId: "input" },
+  },
 ];
 
 // Do not edit below here.

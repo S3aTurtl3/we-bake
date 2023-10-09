@@ -147,7 +147,8 @@ class Routes {
   @Router.post("/recipe_collections/:_id/recipes")
   async addRecipeToCollection(session: WebSessionDoc, _id: string, recipeId: string) {
     const user = WebSession.getUser(session);
-    await AccessControl.assertHasAccess(user, recipeId);
+    const parsedRecipeId: ObjectId = new ObjectId(recipeId); // handle unparseable
+    await AccessControl.assertHasAccess(user, parsedRecipeId);
   }
 
   /**
@@ -159,7 +160,8 @@ class Routes {
   @Router.delete("/recipe_collections/:_id/recipes/:recipeId")
   async removeRecipeFromCollection(session: WebSessionDoc, _id: string, recipeId: string) {
     const user = WebSession.getUser(session);
-    await AccessControl.assertHasAccess(user, recipeId);
+    const parsedRecipeId: ObjectId = new ObjectId(recipeId); // handle unparseable
+    await AccessControl.assertHasAccess(user, parsedRecipeId);
   }
 
   /**
@@ -178,13 +180,15 @@ class Routes {
    *  Grants a user access to the recipe; can only be performed by author of recipe
    *
    * @param session
-   * @param _id the id of the recipe's access control
+   * @param recipeId the id of the recipe
    * @param userId the id of the user who will be granted access to the recipe
    */
-  @Router.post("/recipe_access_controls/:_id/users_with_access")
-  async grantUserAccessToRecipe(session: WebSessionDoc, _id: ObjectId, userId: ObjectId) {
+  @Router.put("/recipe_access_controls/users/:userId/accessibleContent")
+  async grantUserAccessToRecipe(session: WebSessionDoc, recipeId: string, userId: string) {
     const user = WebSession.getUser(session);
-    return user;
+    const parsedRecipeId: ObjectId = new ObjectId(recipeId); // TODO: handle _id parseable as ObjectId
+    const parsedUserId: ObjectId = new ObjectId(userId);
+    return await AccessControl.putAccess(parsedUserId, parsedRecipeId);
   }
 
   /**
