@@ -74,7 +74,13 @@ const operations: operation[] = [
   {
     name: "Grant a user access to a Recipe",
     endpoint: "/api/recipe_access_controls/users/:userId/accessibleContent",
-    method: "PUT", // common mistake: forgetting sync this with the method defined in routes.ts -> results in 404
+    method: "PUT",
+    fields: { userId: "input", recipeId: "input" },
+  },
+  {
+    name: "Revoke a user's access to a Recipe",
+    endpoint: "/api/recipe_access_controls/users/:userId/accessibleContent/:recipeId",
+    method: "DELETE",
     fields: { userId: "input", recipeId: "input" },
   },
 ];

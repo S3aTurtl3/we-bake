@@ -207,12 +207,15 @@ class Routes {
   /**
    *
    * @param session
-   * @param _id the id of the recipe's access control
+   * @param recipeId the id of the recipe
    * @param userId the id of the user whose access will be removed from the recipe
    */
-  @Router.delete("/recipe_access_controls/:_id/users_with_access/:userId")
-  async removeUserAccessToRecipe(session: WebSessionDoc, _id: string, userId: string) {
+  @Router.delete("/recipe_access_controls/users/:userId/accessibleContent/:recipeId")
+  async removeUserAccessToRecipe(session: WebSessionDoc, recipeId: string, userId: string) {
     const user = WebSession.getUser(session);
+    const parsedRecipeId: ObjectId = new ObjectId(recipeId); // TODO: handle _id parseable as ObjectId
+    const parsedUserId: ObjectId = new ObjectId(userId);
+    return await AccessControl.removeAccess(parsedUserId, parsedRecipeId);
   }
 
   /**

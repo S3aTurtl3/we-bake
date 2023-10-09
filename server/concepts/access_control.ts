@@ -35,13 +35,15 @@ export default class AccessControlConcept {
   }
 
   async removeAccess(user: ObjectId, userContent: ObjectId) {
-    const accessibleContent: ObjectId[] = (await this.getAccessibleContent(user)).slice();
+    const controlDoc = await this.getAccessControl(user);
+    const accessibleContent: ObjectId[] = controlDoc.accessibleContent.slice(); // defensive copy
 
-    const index = accessibleContent.indexOf(userContent, 0);
+    const index = accessibleContent.findIndex((objectId) => objectId.toString() === userContent.toString());
     if (index > -1) {
       accessibleContent.splice(index, 1);
-    }
-    return { msg: "User access was revoked!" };
+      await this.recipeAccessControls.updateOne({ _id: controlDoc._id }, { accessibleContent: accessibleContent });
+    } // notify someone if "else"...
+    return { msg: "Completed." };
   }
 
   private async canAccess(user: ObjectId, userContent: ObjectId): Promise<boolean> {
@@ -70,8 +72,13 @@ export default class AccessControlConcept {
     return accessControlDoc;
   }
 
+  /**
+   *
+   * @param user
+   * @returns a (defensive copy) of the content that the user has access to
+   */
   async getAccessibleContent(user: ObjectId): Promise<Array<ObjectId>> {
     const controlDoc = await this.getAccessControl(user);
-    return controlDoc.accessibleContent;
+    return controlDoc.accessibleContent.slice();
   }
 }
