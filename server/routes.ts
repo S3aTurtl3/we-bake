@@ -131,7 +131,9 @@ class Routes {
   async updateRecipe(session: WebSessionDoc, _id: string, update: string) {
     // note: it is required that update is string for lightweight front-end... else its fields (which are objects, but were rendered as strings by lightweight frontend) cant be parsed
     // authorship is implemented and validated by the "moderation" concept
+    const user = WebSession.getUser(session);
     const parsedId: ObjectId = new ObjectId(_id);
+    await AccessControl.assertHasAccess(user, parsedId);
     const parsedUpdate: Partial<RecipeDoc> = JSON.parse(update);
     return await Recipe.update(parsedId, parsedUpdate);
   }
