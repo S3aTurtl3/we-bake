@@ -115,7 +115,7 @@ class Routes {
    * @returns the created recipe collection object
    */
   @Router.patch("/recipe_collections/:_id")
-  async updateRecipeCollectionName(session: WebSessionDoc, _id: ObjectId, name: string) {
+  async updateRecipeCollectionName(session: WebSessionDoc, _id: string, name: string) {
     Recipe;
   }
 
@@ -145,7 +145,7 @@ class Routes {
    * @param recipeId the id of the recipe to add to the collection
    */
   @Router.post("/recipe_collections/:_id/recipes")
-  async addRecipeToCollection(session: WebSessionDoc, _id: ObjectId, recipeId: ObjectId) {
+  async addRecipeToCollection(session: WebSessionDoc, _id: string, recipeId: string) {
     const user = WebSession.getUser(session);
     await AccessControl.assertHasAccess(user, recipeId);
   }
@@ -157,7 +157,7 @@ class Routes {
    * @param recipeId the id of the recipe to remove from the collection
    */
   @Router.delete("/recipe_collections/:_id/recipes/:recipeId")
-  async removeRecipeFromCollection(session: WebSessionDoc, _id: ObjectId, recipeId: ObjectId) {
+  async removeRecipeFromCollection(session: WebSessionDoc, _id: string, recipeId: string) {
     const user = WebSession.getUser(session);
     await AccessControl.assertHasAccess(user, recipeId);
   }
@@ -169,8 +169,9 @@ class Routes {
    * @returns the properties of recipes existing in the collection
    */
   @Router.get("/recipe_collections/:_id")
-  async getRecipesFromCollection(session: WebSessionDoc, _id: ObjectId) {
+  async getRecipesFromCollection(session: WebSessionDoc, _id: string) {
     const user = WebSession.getUser(session);
+    // TODO: only return recipes that the user has access to
   }
 
   /**
@@ -195,7 +196,7 @@ class Routes {
    * @param userId the id of the user who will be granted access to the collection
    */
   @Router.post("/collection_access_controls/:_id/users_with_access")
-  async grantUserAccessToCollection(session: WebSessionDoc, _id: ObjectId, userId: ObjectId) {
+  async grantUserAccessToCollection(session: WebSessionDoc, _id: string, userId: string) {
     const user = WebSession.getUser(session);
   }
 
@@ -206,7 +207,7 @@ class Routes {
    * @param userId the id of the user whose access will be removed from the recipe
    */
   @Router.delete("/recipe_access_controls/:_id/users_with_access/:userId")
-  async removeUserAccessToRecipe(session: WebSessionDoc, _id: ObjectId, userId: ObjectId) {
+  async removeUserAccessToRecipe(session: WebSessionDoc, _id: string, userId: string) {
     const user = WebSession.getUser(session);
   }
 
@@ -219,7 +220,7 @@ class Routes {
    * @param userId the id of the user whose access will be removed from the collection
    */
   @Router.delete("/collection_access_controls/:_id/users_with_access/:userId")
-  async removeUserAccessToRecipeCollection(session: WebSessionDoc, _id: ObjectId, userId: ObjectId) {
+  async removeUserAccessToRecipeCollection(session: WebSessionDoc, _id: string, userId: string) {
     const user = WebSession.getUser(session);
   }
 
@@ -232,7 +233,7 @@ class Routes {
    * @returns the id of the created discussion thread
    */
   @Router.post("/discussion_threads")
-  async startDiscussionThread(session: WebSessionDoc, recipeId: ObjectId) {
+  async startDiscussionThread(session: WebSessionDoc, recipeId: string) {
     const user = WebSession.getUser(session);
   }
 
@@ -244,7 +245,7 @@ class Routes {
    * @returns the id of the created discussion thread
    */
   @Router.get("/discussion_threads/:_id")
-  async getDiscussionThread(session: WebSessionDoc, _id: ObjectId) {
+  async getDiscussionThread(session: WebSessionDoc, _id: string) {
     const user = WebSession.getUser(session);
   }
 
@@ -257,7 +258,7 @@ class Routes {
    * @returns the id of the created remark
    */
   @Router.post("/discussion_threads/:discussionId/remarks")
-  async addRemarkToDiscussion(session: WebSessionDoc, discussionId: ObjectId, remark: ManuallyEnteredRemark) {
+  async addRemarkToDiscussion(session: WebSessionDoc, discussionId: string, remark: ManuallyEnteredRemark) {
     const user = WebSession.getUser(session);
   }
 
@@ -270,7 +271,7 @@ class Routes {
    * @returns the id of the removed remark
    */
   @Router.delete("/discussion_threads/:discussionId/remarks/:remarkId")
-  async removeRemarkFromDiscussion(session: WebSessionDoc, discussionId: ObjectId, remarkId: ObjectId) {
+  async removeRemarkFromDiscussion(session: WebSessionDoc, discussionId: string, remarkId: string) {
     const user = WebSession.getUser(session);
   }
 
