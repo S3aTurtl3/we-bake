@@ -1,10 +1,77 @@
 import { ObjectId } from "mongodb";
-import { BaseDoc } from "../framework/doc";
+import DocCollection, { BaseDoc } from "../framework/doc";
+import { NotAllowedError, NotFoundError } from "./errors";
 
-type UserContentObjectId = ObjectId;
-type UserObjectId = ObjectId;
+/**
+ * Maps the user represented by AccessControllerDoc.user to the set of instances user-created content that the user has access to
+ */
+export interface AccessControlDoc extends BaseDoc {
+  accessibleContent: Array<ObjectId>;
+  user: ObjectId;
+}
 
-export interface AccessController extends BaseDoc {
-  usersWithAccess: Array<UserObjectId>;
-  content: UserContentObjectId; // help! can i really store a set
+/**
+ * purpose: To make it possible for sharing recipes with trusted users, and to allow moderation of discussion threads
+ *  for the recipe
+ *
+ * principle: A user who is granted with access to a Recipe can view the recipe and navigate to it within the
+ *  application; Access to a DiscussionThread allows a user to both read and contribute to a discussion thread. Without access, none of these actions can be performed.
+ */
+export default class AccessControlConcept {
+  public readonly recipeAccessControls = new DocCollection<AccessControlDoc>("recipe_access_controls");
+
+  async putAccess(user: ObjectId, userContent: ObjectId) {
+    try {
+      const controlDoc = await this.getAccessControl(user);
+      const accessibleContent: ObjectId[] = controlDoc.accessibleContent.slice();
+      accessibleContent.push(userContent);
+      await this.recipeAccessControls.updateOne({ _id: controlDoc._id }, { accessibleContent: accessibleContent });
+    } catch (e) {
+      // TODO: catch only not-found errors
+      await this.recipeAccessControls.createOne({ user: user, accessibleContent: [userContent] });
+    }
+
+    return { msg: "User was granted access!" };
+  }
+
+  async removeAccess(user: ObjectId, userContent: ObjectId) {
+    const accessibleContent: ObjectId[] = (await this.getAccessibleContent(user)).slice();
+
+    const index = accessibleContent.indexOf(userContent, 0);
+    if (index > -1) {
+      accessibleContent.splice(index, 1);
+    }
+    return { msg: "User access was revoked!" };
+  }
+
+  private async canAccess(user: ObjectId, userContent: ObjectId): Promise<boolean> {
+    const accessibleContent = await this.getAccessibleContent(user);
+    return accessibleContent.map((id) => id.toString()).includes(userContent.toString());
+  }
+
+  async assertHasAccess(user: ObjectId, userContent: ObjectId): Promise<void> {
+    const canAccess = await this.canAccess(user, userContent);
+    if (!canAccess) {
+      throw new NotAllowedError("The user does not have access to this content.");
+    }
+  }
+
+  /**
+   *
+   * @param user
+   * @returns the list of objects the user has access to
+   */
+  private async getAccessControl(user: ObjectId): Promise<AccessControlDoc> {
+    const query = { user: user };
+    const accessControlDoc: AccessControlDoc | null = await this.recipeAccessControls.readOne(query);
+    if (accessControlDoc === null) {
+      throw new NotFoundError(`Corresponding access control not found!`);
+    }
+    return accessControlDoc;
+  }
+
+  async getAccessibleContent(user: ObjectId): Promise<Array<ObjectId>> {
+    const controlDoc = await this.getAccessControl(user);
+    return controlDoc.accessibleContent;
+  }
 }

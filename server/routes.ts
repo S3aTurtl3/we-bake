@@ -1,5 +1,5 @@
 import { ObjectId } from "mongodb";
-import { Friend, Recipe, User, WebSession } from "./app";
+import { AccessControl, Friend, Recipe, User, WebSession } from "./app";
 import { ManuallyEnteredRecipe, RecipeDoc } from "./concepts/recipe";
 import { ManuallyEnteredRemark } from "./concepts/remark";
 import { UserDoc } from "./concepts/user";
@@ -69,7 +69,12 @@ class Routes {
     // later put in wrapper parse func that explains error
     // TODO: type check the input fields
     const parsedRecipe: ManuallyEnteredRecipe = JSON.parse(recipe);
-    return await Recipe.create(parsedRecipe);
+
+    const recipeCreationResponse = await Recipe.create(parsedRecipe);
+    const user = WebSession.getUser(session);
+    await AccessControl.putAccess(user, recipeCreationResponse.recipeId);
+
+    return recipeCreationResponse;
   }
 
   /**
@@ -82,6 +87,9 @@ class Routes {
   @Router.get("/recipes/:_id")
   async getRecipe(session: WebSessionDoc, _id: string) {
     const parsedId: ObjectId = new ObjectId(_id); // TODO: handle _id parseable as ObjectId
+
+    const user = WebSession.getUser(session);
+    await AccessControl.assertHasAccess(user, parsedId);
     return await Recipe.getRecipes({ _id: parsedId });
   }
 
@@ -137,6 +145,7 @@ class Routes {
   @Router.post("/recipe_collections/:_id/recipes")
   async addRecipeToCollection(session: WebSessionDoc, _id: ObjectId, recipeId: ObjectId) {
     const user = WebSession.getUser(session);
+    await AccessControl.assertHasAccess(user, recipeId);
   }
 
   /**
@@ -148,6 +157,7 @@ class Routes {
   @Router.delete("/recipe_collections/:_id/recipes/:recipeId")
   async removeRecipeFromCollection(session: WebSessionDoc, _id: ObjectId, recipeId: ObjectId) {
     const user = WebSession.getUser(session);
+    await AccessControl.assertHasAccess(user, recipeId);
   }
 
   /**

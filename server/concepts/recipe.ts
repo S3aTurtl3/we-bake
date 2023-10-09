@@ -21,7 +21,7 @@ export default class RecipeManagement {
 
   async create(content: ManuallyEnteredRecipe) {
     const _id = await this.recipes.createOne({ ...content });
-    return { msg: "Recipe successfully created!", recipe: await this.recipes.readOne({ _id }) };
+    return { msg: "Recipe successfully created!", recipeId: _id };
   }
 
   async getRecipes(query: Filter<RecipeDoc>) {
