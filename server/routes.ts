@@ -1,7 +1,8 @@
 import { ObjectId } from "mongodb";
 import { AccessControl, Friend, ParentshipManagement, Recipe, RecipeCollectionManagement, User, WebSession } from "./app";
+import { ContentType } from "./concepts/access_control";
 import { ManuallyEnteredRecipe, RecipeDoc } from "./concepts/recipe";
-import { ManuallyEnteredRemark } from "./concepts/remark";
+import { Remark } from "./concepts/remark";
 import { UserDoc } from "./concepts/user";
 import { WebSessionDoc } from "./concepts/websession";
 import { Router, getExpressRouter } from "./framework/router";
@@ -72,7 +73,7 @@ class Routes {
 
     const recipeCreationResponse = await Recipe.create(parsedRecipe);
     const user = WebSession.getUser(session);
-    await AccessControl.putAccess(user, recipeCreationResponse.recipeId);
+    await AccessControl.putAccess(user, recipeCreationResponse.recipeId, ContentType.RECIPE);
 
     return recipeCreationResponse;
   }
@@ -89,7 +90,7 @@ class Routes {
     const parsedId: ObjectId = new ObjectId(_id); // TODO: handle _id parseable as ObjectId
 
     const user = WebSession.getUser(session);
-    await AccessControl.assertHasAccess(user, parsedId);
+    await AccessControl.assertHasAccess(user, parsedId, ContentType.RECIPE);
     return await Recipe.getRecipes({ _id: parsedId });
   }
 
@@ -104,7 +105,9 @@ class Routes {
   async createRecipeCollection(session: WebSessionDoc, name: string) {
     //note: unique collection names not required
     const user = WebSession.getUser(session);
-    return await RecipeCollectionManagement.createCollection(name);
+    const collectionCreationResponse = await RecipeCollectionManagement.createCollection(name);
+    await AccessControl.putAccess(user, collectionCreationResponse.id, ContentType.COLLECTION);
+    return collectionCreationResponse;
   }
 
   /**
@@ -117,6 +120,15 @@ class Routes {
    */
   @Router.patch("/recipe_collections/:_id")
   async updateRecipeCollectionName(session: WebSessionDoc, _id: string, name: string) {}
+
+  /**
+   *
+   * @param session
+   * @param _id id of recipe collection
+   * @returns the name of the recipe collection with the given id
+   */
+  @Router.get("/recipe_collections/:_id")
+  async getRecipeCollectionName(session: WebSessionDoc, _id: string) {}
 
   /**
    * Uses the fields of `update` to overwrite the fields in the recipe whose id is `_id`
@@ -132,7 +144,7 @@ class Routes {
     // authorship is implemented and validated by the "moderation" concept
     const user = WebSession.getUser(session);
     const parsedId: ObjectId = new ObjectId(_id);
-    await AccessControl.assertHasAccess(user, parsedId);
+    await AccessControl.assertHasAccess(user, parsedId, ContentType.RECIPE);
     const parsedUpdate: Partial<RecipeDoc> = JSON.parse(update);
     return await Recipe.update(parsedId, parsedUpdate);
   }
@@ -147,9 +159,9 @@ class Routes {
   async addRecipeToCollection(session: WebSessionDoc, _id: string, recipeId: string) {
     const user = WebSession.getUser(session);
     const parsedRecipeId: ObjectId = new ObjectId(recipeId); // handle unparseable
-    await AccessControl.assertHasAccess(user, parsedRecipeId);
-
     const parsedCollectionId: ObjectId = new ObjectId(_id); // handle unparseable
+    await AccessControl.assertHasAccess(user, parsedRecipeId, ContentType.RECIPE);
+    await AccessControl.assertHasAccess(user, parsedCollectionId, ContentType.COLLECTION);
     await ParentshipManagement.putParentship({ child: parsedRecipeId, parent: parsedCollectionId });
     return { msg: "Recipe added!" };
   }
@@ -164,7 +176,10 @@ class Routes {
   async removeRecipeFromCollection(session: WebSessionDoc, _id: string, recipeId: string) {
     const user = WebSession.getUser(session);
     const parsedRecipeId: ObjectId = new ObjectId(recipeId); // handle unparseable
-    await AccessControl.assertHasAccess(user, parsedRecipeId);
+    const parsedCollectionId: ObjectId = new ObjectId(_id); // handle unparseable
+    await AccessControl.assertHasAccess(user, parsedRecipeId, ContentType.RECIPE);
+    await AccessControl.assertHasAccess(user, parsedCollectionId, ContentType.COLLECTION);
+    throw Error("not implemented");
   }
 
   /**
@@ -177,9 +192,9 @@ class Routes {
   async getRecipesFromCollection(session: WebSessionDoc, _id: string) {
     const user = WebSession.getUser(session);
     const parsedCollectionId: ObjectId = new ObjectId(_id); // handle unparseable
+    await AccessControl.assertHasAccess(user, parsedCollectionId, ContentType.COLLECTION);
     const recipes: ObjectId[] = await ParentshipManagement.getAllChildren(parsedCollectionId);
     return { recipes: recipes };
-    // TODO: only return recipes that the user has access to
   }
 
   /**
@@ -194,7 +209,7 @@ class Routes {
     const user = WebSession.getUser(session);
     const parsedRecipeId: ObjectId = new ObjectId(recipeId); // TODO: handle _id parseable as ObjectId
     const parsedUserId: ObjectId = new ObjectId(userId);
-    return await AccessControl.putAccess(parsedUserId, parsedRecipeId);
+    return await AccessControl.putAccess(parsedUserId, parsedRecipeId, ContentType.RECIPE);
   }
 
   /**
@@ -205,9 +220,12 @@ class Routes {
    * @param _id the id of the collection's access control
    * @param userId the id of the user who will be granted access to the collection
    */
-  @Router.post("/collection_access_controls/:_id/users_with_access")
+  @Router.put("/collection_access_controls/users/:userId/accessibleContent")
   async grantUserAccessToCollection(session: WebSessionDoc, _id: string, userId: string) {
     const user = WebSession.getUser(session);
+    const parsedCollectionId: ObjectId = new ObjectId(_id); // TODO: handle _id parseable as ObjectId
+    const parsedUserId: ObjectId = new ObjectId(userId);
+    return await AccessControl.putAccess(parsedUserId, parsedCollectionId, ContentType.COLLECTION);
   }
 
   /**
@@ -221,7 +239,7 @@ class Routes {
     const user = WebSession.getUser(session);
     const parsedRecipeId: ObjectId = new ObjectId(recipeId); // TODO: handle _id parseable as ObjectId
     const parsedUserId: ObjectId = new ObjectId(userId);
-    return await AccessControl.removeAccess(parsedUserId, parsedRecipeId);
+    return await AccessControl.removeAccess(parsedUserId, parsedRecipeId, ContentType.RECIPE);
   }
 
   /**
@@ -232,9 +250,12 @@ class Routes {
    * @param _id the id of the collection's access control
    * @param userId the id of the user whose access will be removed from the collection
    */
-  @Router.delete("/collection_access_controls/:_id/users_with_access/:userId")
+  @Router.delete("/collection_access_controls/users/:userId/accessibleContent/:_id")
   async removeUserAccessToRecipeCollection(session: WebSessionDoc, _id: string, userId: string) {
     const user = WebSession.getUser(session);
+    const parsedCollectionId: ObjectId = new ObjectId(_id); // TODO: handle _id parseable as ObjectId
+    const parsedUserId: ObjectId = new ObjectId(userId);
+    return await AccessControl.removeAccess(parsedUserId, parsedCollectionId, ContentType.COLLECTION);
   }
 
   /**
@@ -271,7 +292,7 @@ class Routes {
    * @returns the id of the created remark
    */
   @Router.post("/discussion_threads/:discussionId/remarks")
-  async addRemarkToDiscussion(session: WebSessionDoc, discussionId: string, remark: ManuallyEnteredRemark) {
+  async addRemarkToDiscussion(session: WebSessionDoc, discussionId: string, remark: Remark) {
     const user = WebSession.getUser(session);
   }
 

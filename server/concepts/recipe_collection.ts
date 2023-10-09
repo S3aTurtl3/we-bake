@@ -10,7 +10,7 @@ export default class RecipeCollectionConcept {
 
   async createCollection(name: string) {
     const _id = await this.collections.createOne({ name });
-    return { msg: "Collection successfully created!", threadId: _id };
+    return { msg: "Collection successfully created!", id: _id };
   }
 
   async update(_id: ObjectId, update: Partial<RecipeCollectionDoc>) {

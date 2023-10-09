@@ -78,10 +78,22 @@ const operations: operation[] = [
     fields: { userId: "input", recipeId: "input" },
   },
   {
+    name: "Grant a user access to a Collection",
+    endpoint: "/api/collection_access_controls/users/:userId/accessibleContent",
+    method: "PUT",
+    fields: { userId: "input", _id: "input" },
+  },
+  {
     name: "Revoke a user's access to a Recipe",
     endpoint: "/api/recipe_access_controls/users/:userId/accessibleContent/:recipeId",
     method: "DELETE",
     fields: { userId: "input", recipeId: "input" },
+  },
+  {
+    name: "Revoke a user access to a Collection",
+    endpoint: "/api/collection_access_controls/users/:userId/accessibleContent/:_id",
+    method: "DELETE",
+    fields: { userId: "input", _id: "input" },
   },
   {
     name: "Create Recipe Collection",
