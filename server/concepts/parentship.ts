@@ -12,7 +12,11 @@ export interface ParentShipDoc extends BaseDoc {
 }
 
 export default class ParentConcept {
-  public readonly parentships = new DocCollection<ParentShipDoc>("parentships");
+  public readonly parentships: DocCollection<ParentShipDoc>;
+
+  public constructor(parentshipName: string) {
+    this.parentships = new DocCollection<ParentShipDoc>(`${parentshipName}_parentships`);
+  }
 
   async putParentship(parentShip: ParentShip) {
     const existing: ParentShipDoc[] = await this.getParentships(parentShip);

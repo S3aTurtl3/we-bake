@@ -1,5 +1,5 @@
 import { ObjectId } from "mongodb";
-import { AccessControl, Friend, ParentshipManagement, Recipe, RecipeCollectionManagement, User, WebSession } from "./app";
+import { AccessControl, Friend, ParentshipManagement, Recipe, RecipeCollectionManagement, RecipeModeration, User, WebSession } from "./app";
 import { ContentType } from "./concepts/access_control";
 import { ManuallyEnteredRecipe, RecipeDoc } from "./concepts/recipe";
 import { Remark } from "./concepts/remark";
@@ -74,7 +74,7 @@ class Routes {
     const recipeCreationResponse = await Recipe.create(parsedRecipe);
     const user = WebSession.getUser(session);
     await AccessControl.putAccess(user, recipeCreationResponse.recipeId, ContentType.RECIPE);
-
+    await RecipeModeration.putParentship({ child: recipeCreationResponse.recipeId, parent: user }); // later: create function namses specific to this concept
     return recipeCreationResponse;
   }
 
@@ -209,6 +209,7 @@ class Routes {
     const user = WebSession.getUser(session);
     const parsedRecipeId: ObjectId = new ObjectId(recipeId); // TODO: handle _id parseable as ObjectId
     const parsedUserId: ObjectId = new ObjectId(userId);
+    await RecipeModeration.assertIsModerator(parsedRecipeId, user);
     return await AccessControl.putAccess(parsedUserId, parsedRecipeId, ContentType.RECIPE);
   }
 
@@ -239,6 +240,7 @@ class Routes {
     const user = WebSession.getUser(session);
     const parsedRecipeId: ObjectId = new ObjectId(recipeId); // TODO: handle _id parseable as ObjectId
     const parsedUserId: ObjectId = new ObjectId(userId);
+    await RecipeModeration.assertIsModerator(parsedRecipeId, user);
     return await AccessControl.removeAccess(parsedUserId, parsedRecipeId, ContentType.RECIPE);
   }
 

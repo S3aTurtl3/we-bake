@@ -1,5 +1,6 @@
 import AccessControlConcept from "./concepts/access_control";
 import FriendConcept from "./concepts/friend";
+import ModerationConcept from "./concepts/moderation";
 import ParentConcept from "./concepts/parentship";
 import RecipeManagement from "./concepts/recipe";
 import RecipeCollectionConcept from "./concepts/recipe_collection";
@@ -13,4 +14,5 @@ export const Friend = new FriendConcept();
 export const Recipe = new RecipeManagement();
 export const AccessControl = new AccessControlConcept();
 export const RecipeCollectionManagement = new RecipeCollectionConcept();
-export const ParentshipManagement = new ParentConcept();
+export const ParentshipManagement = new ParentConcept("content");
+export const RecipeModeration = new ModerationConcept("recipe"); // choose different representation if only one mod allowed
