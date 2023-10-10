@@ -349,6 +349,31 @@ class Routes {
   }
 
   /**
+   *
+   * @param session of a user who has access to the discussion thread to which the remark belongs
+   * @param remarkId the id of an existing remark
+   * @returns the contents of the remark
+   */
+  @Router.get("/remarks/:remarkId")
+  async getRemark(session: WebSessionDoc, remarkId: string) {
+    const user = WebSession.getUser(session);
+    const parsedRemarkId: ObjectId = new ObjectId(remarkId);
+    // get parent thread
+    const parentThreadIds: ObjectId[] = (await DiscussionThreadParentshipManagement.getParentships({ child: parsedRemarkId })).map(({ parent }) => parent);
+    if (parentThreadIds.length !== 1) throw new Error("Discussion threads should have exactly 1 parent");
+    const parentThreadId: ObjectId = parentThreadIds[0];
+
+    // assert user has access to discussion thread
+    // (move the below code into DiscussionThread concept)
+    const parentIds: ObjectId[] = (await DiscussionThreadParentshipManagement.getParentships({ child: parentThreadId })).map(({ parent }) => parent);
+    if (parentIds.length !== 1) throw new Error("Discussion threads should have exactly 1 parent");
+    const parentRecipe: ObjectId = parentIds[0];
+    await AccessControl.assertHasAccess(user, parentRecipe, ContentType.RECIPE);
+
+    return await RemarkManagement.getRemarks({ _id: parsedRemarkId });
+  }
+
+  /**
    * Removes a comment from the discussion thread
    *
    * @param session of a user with ownership of the recipe to which the discussion belongs
