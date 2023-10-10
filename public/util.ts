@@ -101,6 +101,7 @@ const operations: operation[] = [
     method: "POST",
     fields: { name: "input" },
   },
+
   {
     name: "Add Recipe to Collection",
     endpoint: "/api/recipe_collections/:_id/recipes",
@@ -111,24 +112,6 @@ const operations: operation[] = [
   {
     name: "Get Recipes in Collection",
     endpoint: "/api/recipe_collections/:_id",
-    method: "GET",
-    fields: { _id: "input" },
-  },
-  {
-    name: "Create Discussion Thread",
-    endpoint: "/api/discussion_threads",
-    method: "POST",
-    fields: { recipeId: "input", name: "input" },
-  },
-  {
-    name: "Add Remark to Discussion Thread",
-    endpoint: "/api/discussion_threads/:discussionId/remarks",
-    method: "POST",
-    fields: { discussionId: "input", remark: "input" },
-  },
-  {
-    name: "Get Discussion Thread Contents",
-    endpoint: "/api/discussion_threads/:_id",
     method: "GET",
     fields: { _id: "input" },
   },

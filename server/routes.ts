@@ -1,18 +1,5 @@
 import { ObjectId } from "mongodb";
-import {
-  AccessControl,
-  CollectionModeration,
-  DiscussionThread,
-  DiscussionThreadParentshipManagement,
-  Friend,
-  ParentshipManagement,
-  Recipe,
-  RecipeCollectionManagement,
-  RecipeModeration,
-  RemarkManagement,
-  User,
-  WebSession,
-} from "./app";
+import { AccessControl, CollectionModeration, Friend, ParentshipManagement, Recipe, RecipeCollectionManagement, RecipeModeration, User, WebSession } from "./app";
 import { ContentType } from "./concepts/access_control";
 import { ManuallyEnteredRecipe, RecipeDoc } from "./concepts/recipe";
 import { Remark } from "./concepts/remark";
@@ -284,37 +271,20 @@ class Routes {
    * @returns the id of the created discussion thread
    */
   @Router.post("/discussion_threads")
-  async startDiscussionThread(session: WebSessionDoc, recipeId: string, name: string) {
+  async startDiscussionThread(session: WebSessionDoc, recipeId: string) {
     const user = WebSession.getUser(session);
-    const parsedRecipeId: ObjectId = new ObjectId(recipeId); // handle unparseable
-    await AccessControl.assertHasAccess(user, parsedRecipeId, ContentType.RECIPE);
-    const threadCreationResponse = await DiscussionThread.createThread(name);
-    await DiscussionThreadParentshipManagement.putParentship({ child: threadCreationResponse.threadId, parent: parsedRecipeId });
-    return threadCreationResponse;
   }
 
   /**
    * Returns the contents of the discussion thread if the user making the request has access to the thread
    *
-   * @param session of a user with access to the discussion thread
+   * @param session
    * @param _id the id of the discussion thread
-   * @returns the Remarks in the discussion thread
+   * @returns the id of the created discussion thread
    */
   @Router.get("/discussion_threads/:_id")
   async getDiscussionThread(session: WebSessionDoc, _id: string) {
     const user = WebSession.getUser(session);
-    const parsedThreadId: ObjectId = new ObjectId(_id); // handle unparseable
-
-    // assert user has access to discussion thread
-    // (move the below code into DiscussionThread concept)
-    const parentIds: ObjectId[] = (await DiscussionThreadParentshipManagement.getParentships({ child: parsedThreadId })).map(({ parent }) => parent);
-    if (parentIds.length !== 1) throw new Error("Discussion threads should have exactly 1 parent");
-    const parentRecipe: ObjectId = parentIds[0];
-
-    await AccessControl.assertHasAccess(user, parentRecipe, ContentType.RECIPE);
-
-    const remarks: ObjectId[] = await DiscussionThreadParentshipManagement.getAllChildren(parsedThreadId);
-    return { msg: "Success", remarks: remarks };
   }
 
   /**
@@ -322,55 +292,12 @@ class Routes {
    *
    * @param session of a user with access to the discussion
    * @param discussionId the id of the discussion thread
-   * @param remark a string parseable as a Remark; the content that will be posted to the discussion thread
-   * @returns a response object containing the id of the created remark under the `id` property
+   * @param remark the content that will be posted to the discussion thread
+   * @returns the id of the created remark
    */
   @Router.post("/discussion_threads/:discussionId/remarks")
-  async addRemarkToDiscussion(session: WebSessionDoc, discussionId: string, remark: string) {
+  async addRemarkToDiscussion(session: WebSessionDoc, discussionId: string, remark: Remark) {
     const user = WebSession.getUser(session);
-    const parsedThreadId: ObjectId = new ObjectId(discussionId); // handle unparseable
-    const parsedRemark: Remark = JSON.parse(remark);
-
-    // assert user has access to discussion thread
-    // (move the below code into DiscussionThread concept)
-    const parentIds: ObjectId[] = (await DiscussionThreadParentshipManagement.getParentships({ child: parsedThreadId })).map(({ parent }) => parent);
-    if (parentIds.length !== 1) throw new Error("Discussion threads should have exactly 1 parent");
-    const parentRecipe: ObjectId = parentIds[0];
-
-    await AccessControl.assertHasAccess(user, parentRecipe, ContentType.RECIPE);
-
-    // create remark
-    const remarkCreationResponse = await RemarkManagement.create(parsedRemark);
-
-    // add to discussion thread
-    await DiscussionThreadParentshipManagement.putParentship({ child: remarkCreationResponse.id, parent: parsedThreadId });
-
-    return remarkCreationResponse;
-  }
-
-  /**
-   *
-   * @param session of a user who has access to the discussion thread to which the remark belongs
-   * @param remarkId the id of an existing remark
-   * @returns the contents of the remark
-   */
-  @Router.get("/remarks/:remarkId")
-  async getRemark(session: WebSessionDoc, remarkId: string) {
-    const user = WebSession.getUser(session);
-    const parsedRemarkId: ObjectId = new ObjectId(remarkId);
-    // get parent thread
-    const parentThreadIds: ObjectId[] = (await DiscussionThreadParentshipManagement.getParentships({ child: parsedRemarkId })).map(({ parent }) => parent);
-    if (parentThreadIds.length !== 1) throw new Error("Discussion threads should have exactly 1 parent");
-    const parentThreadId: ObjectId = parentThreadIds[0];
-
-    // assert user has access to discussion thread
-    // (move the below code into DiscussionThread concept)
-    const parentIds: ObjectId[] = (await DiscussionThreadParentshipManagement.getParentships({ child: parentThreadId })).map(({ parent }) => parent);
-    if (parentIds.length !== 1) throw new Error("Discussion threads should have exactly 1 parent");
-    const parentRecipe: ObjectId = parentIds[0];
-    await AccessControl.assertHasAccess(user, parentRecipe, ContentType.RECIPE);
-
-    return await RemarkManagement.getRemarks({ _id: parsedRemarkId });
   }
 
   /**
