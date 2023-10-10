@@ -1,5 +1,15 @@
 import { ObjectId } from "mongodb";
-import { AccessControl, Friend, ParentshipManagement, Recipe, RecipeCollectionManagement, RecipeModeration, User, WebSession } from "./app";
+import {
+  AccessControl,
+  CollectionModeration,
+  Friend,
+  ParentshipManagement,
+  Recipe,
+  RecipeCollectionManagement,
+  RecipeModeration,
+  User,
+  WebSession,
+} from "./app";
 import { ContentType } from "./concepts/access_control";
 import { ManuallyEnteredRecipe, RecipeDoc } from "./concepts/recipe";
 import { Remark } from "./concepts/remark";
@@ -58,7 +68,8 @@ class Routes {
   }
 
   /**
-   * Creates the recipe and its corrsesponding access controls
+   * Creates the recipe and gives the author (the user performing this action) both ownership of and
+   * access to the recipe
    *
    * @param session
    * @param recipe JSON string parsable as a ManuallyEnteredRecipe
@@ -66,11 +77,10 @@ class Routes {
    */
   @Router.post("/recipes")
   async createRecipe(session: WebSessionDoc, recipe: string) {
-    //TODO: assert parameters parseable as json (includes not being unded)
+    // TODO: assert parameters parseable as json (includes not being unded)
     // later put in wrapper parse func that explains error
     // TODO: type check the input fields
     const parsedRecipe: ManuallyEnteredRecipe = JSON.parse(recipe);
-
     const recipeCreationResponse = await Recipe.create(parsedRecipe);
     const user = WebSession.getUser(session);
     await AccessControl.putAccess(user, recipeCreationResponse.recipeId, ContentType.RECIPE);
@@ -103,10 +113,10 @@ class Routes {
    */
   @Router.post("/recipe_collections")
   async createRecipeCollection(session: WebSessionDoc, name: string) {
-    //note: unique collection names not required
     const user = WebSession.getUser(session);
     const collectionCreationResponse = await RecipeCollectionManagement.createCollection(name);
     await AccessControl.putAccess(user, collectionCreationResponse.id, ContentType.COLLECTION);
+    await CollectionModeration.putParentship({ child: collectionCreationResponse.id, parent: user });
     return collectionCreationResponse;
   }
 
@@ -194,7 +204,7 @@ class Routes {
     const parsedCollectionId: ObjectId = new ObjectId(_id); // handle unparseable
     await AccessControl.assertHasAccess(user, parsedCollectionId, ContentType.COLLECTION);
     const recipes: ObjectId[] = await ParentshipManagement.getAllChildren(parsedCollectionId);
-    return { recipes: recipes };
+    return { msg: "Success", recipes: recipes }; // LEFT OFF: Doesn't work anymore
   }
 
   /**
@@ -218,7 +228,7 @@ class Routes {
    * the collection; can only be performed by the recipe collection author
    *
    * @param session
-   * @param _id the id of the collection's access control
+   * @param _id the id of the collection
    * @param userId the id of the user who will be granted access to the collection
    */
   @Router.put("/collection_access_controls/users/:userId/accessibleContent")
@@ -226,6 +236,7 @@ class Routes {
     const user = WebSession.getUser(session);
     const parsedCollectionId: ObjectId = new ObjectId(_id); // TODO: handle _id parseable as ObjectId
     const parsedUserId: ObjectId = new ObjectId(userId);
+    await CollectionModeration.assertIsModerator(parsedCollectionId, user);
     return await AccessControl.putAccess(parsedUserId, parsedCollectionId, ContentType.COLLECTION);
   }
 
@@ -257,6 +268,7 @@ class Routes {
     const user = WebSession.getUser(session);
     const parsedCollectionId: ObjectId = new ObjectId(_id); // TODO: handle _id parseable as ObjectId
     const parsedUserId: ObjectId = new ObjectId(userId);
+    await CollectionModeration.assertIsModerator(parsedCollectionId, user);
     return await AccessControl.removeAccess(parsedUserId, parsedCollectionId, ContentType.COLLECTION);
   }
 

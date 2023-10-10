@@ -16,3 +16,4 @@ export const AccessControl = new AccessControlConcept();
 export const RecipeCollectionManagement = new RecipeCollectionConcept();
 export const ParentshipManagement = new ParentConcept("content");
 export const RecipeModeration = new ModerationConcept("recipe"); // choose different representation if only one mod allowed
+export const CollectionModeration = new ModerationConcept("collection");
