@@ -2,7 +2,6 @@ import { ObjectId } from "mongodb";
 import { AccessControl, CollectionModeration, Friend, ParentshipManagement, Recipe, RecipeCollectionManagement, RecipeModeration, User, WebSession } from "./app";
 import { ContentType } from "./concepts/access_control";
 import { ManuallyEnteredRecipe, RecipeDoc } from "./concepts/recipe";
-import { Remark } from "./concepts/remark";
 import { UserDoc } from "./concepts/user";
 import { WebSessionDoc } from "./concepts/websession";
 import { Router, getExpressRouter } from "./framework/router";
@@ -260,57 +259,6 @@ class Routes {
     const parsedUserId: ObjectId = new ObjectId(userId);
     await CollectionModeration.assertIsModerator(parsedCollectionId, user);
     return await AccessControl.removeAccess(parsedUserId, parsedCollectionId, ContentType.COLLECTION);
-  }
-
-  /**
-   * Creates a new empty discussion thread associated with the provided recipe; all users with access to the recipe
-   * have access to the discussion thread; can only be performed by a user with access to the recipe with id `recipeId`
-   *
-   * @param session of a user with access to the recipe with id `recipeId`
-   * @param recipeId the id of the recipe that the discussion thread is associated with
-   * @returns the id of the created discussion thread
-   */
-  @Router.post("/discussion_threads")
-  async startDiscussionThread(session: WebSessionDoc, recipeId: string) {
-    const user = WebSession.getUser(session);
-  }
-
-  /**
-   * Returns the contents of the discussion thread if the user making the request has access to the thread
-   *
-   * @param session
-   * @param _id the id of the discussion thread
-   * @returns the id of the created discussion thread
-   */
-  @Router.get("/discussion_threads/:_id")
-  async getDiscussionThread(session: WebSessionDoc, _id: string) {
-    const user = WebSession.getUser(session);
-  }
-
-  /**
-   * Posts a comment from the user to the discussion thread if the user has access to the thread
-   *
-   * @param session of a user with access to the discussion
-   * @param discussionId the id of the discussion thread
-   * @param remark the content that will be posted to the discussion thread
-   * @returns the id of the created remark
-   */
-  @Router.post("/discussion_threads/:discussionId/remarks")
-  async addRemarkToDiscussion(session: WebSessionDoc, discussionId: string, remark: Remark) {
-    const user = WebSession.getUser(session);
-  }
-
-  /**
-   * Removes a comment from the discussion thread
-   *
-   * @param session of a user with ownership of the recipe to which the discussion belongs
-   * @param discussionId the id of the discussion thread
-   * @param remarkId the id of the remark to remove
-   * @returns the id of the removed remark
-   */
-  @Router.delete("/discussion_threads/:discussionId/remarks/:remarkId")
-  async removeRemarkFromDiscussion(session: WebSessionDoc, discussionId: string, remarkId: string) {
-    const user = WebSession.getUser(session);
   }
 
   @Router.get("/friends")
