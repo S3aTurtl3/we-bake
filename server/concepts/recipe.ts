@@ -1,5 +1,6 @@
 import { Filter, ObjectId } from "mongodb";
 import DocCollection, { BaseDoc } from "../framework/doc";
+import { NotFoundError } from "./errors";
 import { MediaType } from "./helper/default_media_type";
 
 export interface ManuallyEnteredRecipe {
@@ -29,6 +30,14 @@ export default class RecipeManagement {
       sort: { dateUpdated: -1 },
     });
     return recipes;
+  }
+
+  async getRecipeById(_id: ObjectId) {
+    const doc = await this.recipes.readOne({ _id });
+    if (doc === null) {
+      throw new NotFoundError(`Recipe does not exist!`);
+    }
+    return doc;
   }
 
   async update(_id: ObjectId, update: Partial<RecipeDoc>) {

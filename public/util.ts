@@ -110,6 +110,13 @@ const operations: operation[] = [
   },
 
   {
+    name: "Get Collection info",
+    endpoint: "/api/recipe_collections/:_id",
+    method: "GET",
+    fields: { _id: "input" },
+  },
+
+  {
     name: "Get Recipes in Collection",
     endpoint: "/api/recipe_collections/:_id",
     method: "GET",

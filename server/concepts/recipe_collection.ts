@@ -1,5 +1,6 @@
 import { ObjectId } from "mongodb";
 import DocCollection, { BaseDoc } from "../framework/doc";
+import { NotFoundError } from "./errors";
 
 export interface RecipeCollectionDoc extends BaseDoc {
   name: string;
@@ -11,6 +12,14 @@ export default class RecipeCollectionConcept {
   async createCollection(name: string) {
     const _id = await this.collections.createOne({ name });
     return { msg: "Collection successfully created!", id: _id };
+  }
+
+  async getCollectionById(_id: ObjectId) {
+    const collection = await this.collections.readOne({ _id });
+    if (collection === null) {
+      throw new NotFoundError(`Collection not found!`);
+    }
+    return collection;
   }
 
   async update(_id: ObjectId, update: Partial<RecipeCollectionDoc>) {

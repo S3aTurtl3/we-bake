@@ -5,6 +5,7 @@ import { ManuallyEnteredRecipe, RecipeDoc } from "./concepts/recipe";
 import { UserDoc } from "./concepts/user";
 import { WebSessionDoc } from "./concepts/websession";
 import { Router, getExpressRouter } from "./framework/router";
+import { parseInputAsObjectId } from "./parser";
 import Responses from "./responses";
 
 class Routes {
@@ -86,7 +87,7 @@ class Routes {
    */
   @Router.get("/recipes/:_id")
   async getRecipe(session: WebSessionDoc, _id: string) {
-    const parsedId: ObjectId = new ObjectId(_id); // TODO: handle _id parseable as ObjectId
+    const parsedId: ObjectId = parseInputAsObjectId(_id); // TODO: handle _id parseable as ObjectId
 
     const user = WebSession.getUser(session);
     await AccessControl.assertHasAccess(user, parsedId, ContentType.RECIPE);
@@ -110,24 +111,18 @@ class Routes {
   }
 
   /**
-   * Updates the name of the recipe collection
-   *
-   * @param session of a user who is the author of the recipe collection
-   * @param _id the id of the recipe collection whose name will be updated
-   * @param name the name of the recipe collection
-   * @returns the created recipe collection object
-   */
-  @Router.patch("/recipe_collections/:_id")
-  async updateRecipeCollectionName(session: WebSessionDoc, _id: string, name: string) {}
-
-  /**
    *
    * @param session
    * @param _id id of recipe collection
    * @returns the name of the recipe collection with the given id
    */
   @Router.get("/recipe_collections/:_id")
-  async getRecipeCollectionName(session: WebSessionDoc, _id: string) {}
+  async getRecipeCollectionName(session: WebSessionDoc, _id: string) {
+    const parsedId: ObjectId = parseInputAsObjectId(_id); // TODO: handle _id parseable as ObjectId
+    const user = WebSession.getUser(session);
+    await AccessControl.assertHasAccess(user, parsedId, ContentType.COLLECTION);
+    return await RecipeCollectionManagement.getCollectionById(parsedId);
+  }
 
   /**
    * Uses the fields of `update` to overwrite the fields in the recipe whose id is `_id`
@@ -142,7 +137,7 @@ class Routes {
     // note: it is required that update is string for lightweight front-end... else its fields (which are objects, but were rendered as strings by lightweight frontend) cant be parsed
     // authorship is implemented and validated by the "moderation" concept
     const user = WebSession.getUser(session);
-    const parsedId: ObjectId = new ObjectId(_id);
+    const parsedId: ObjectId = parseInputAsObjectId(_id);
     await AccessControl.assertHasAccess(user, parsedId, ContentType.RECIPE);
     const parsedUpdate: Partial<RecipeDoc> = JSON.parse(update);
     return await Recipe.update(parsedId, parsedUpdate);
@@ -157,10 +152,14 @@ class Routes {
   @Router.put("/recipe_collections/:_id/recipes")
   async addRecipeToCollection(session: WebSessionDoc, _id: string, recipeId: string) {
     const user = WebSession.getUser(session);
-    const parsedRecipeId: ObjectId = new ObjectId(recipeId); // handle unparseable
-    const parsedCollectionId: ObjectId = new ObjectId(_id); // handle unparseable
+    const parsedRecipeId: ObjectId = parseInputAsObjectId(recipeId); // handle unparseable
+    const parsedCollectionId: ObjectId = parseInputAsObjectId(_id); // handle unparseable
     await AccessControl.assertHasAccess(user, parsedRecipeId, ContentType.RECIPE);
     await AccessControl.assertHasAccess(user, parsedCollectionId, ContentType.COLLECTION);
+    //assert content existence
+    await Recipe.getRecipeById(parsedRecipeId);
+    await RecipeCollectionManagement.getCollectionById(parsedCollectionId);
+
     await ParentshipManagement.putParentship({ child: parsedRecipeId, parent: parsedCollectionId });
     return { msg: "Recipe added!" };
   }
@@ -174,11 +173,15 @@ class Routes {
   @Router.delete("/recipe_collections/:_id/recipes/:recipeId")
   async removeRecipeFromCollection(session: WebSessionDoc, _id: string, recipeId: string) {
     const user = WebSession.getUser(session);
-    const parsedRecipeId: ObjectId = new ObjectId(recipeId); // handle unparseable
-    const parsedCollectionId: ObjectId = new ObjectId(_id); // handle unparseable
+    const parsedRecipeId: ObjectId = parseInputAsObjectId(recipeId); // handle unparseable
+    const parsedCollectionId: ObjectId = parseInputAsObjectId(_id); // handle unparseable
     await AccessControl.assertHasAccess(user, parsedRecipeId, ContentType.RECIPE);
     await AccessControl.assertHasAccess(user, parsedCollectionId, ContentType.COLLECTION);
-    throw Error("not implemented");
+    //assert content existence
+    await Recipe.getRecipeById(parsedRecipeId);
+    await RecipeCollectionManagement.getCollectionById(parsedCollectionId);
+
+    return await ParentshipManagement.deleteRelationship(parsedRecipeId, parsedCollectionId);
   }
 
   /**
@@ -190,7 +193,10 @@ class Routes {
   @Router.get("/recipe_collections/:_id")
   async getRecipesFromCollection(session: WebSessionDoc, _id: string) {
     const user = WebSession.getUser(session);
-    const parsedCollectionId: ObjectId = new ObjectId(_id); // handle unparseable
+    const parsedCollectionId: ObjectId = parseInputAsObjectId(_id); // handle unparseable
+    //assert content existence
+    await RecipeCollectionManagement.getCollectionById(parsedCollectionId);
+
     await AccessControl.assertHasAccess(user, parsedCollectionId, ContentType.COLLECTION);
     const recipes: ObjectId[] = await ParentshipManagement.getAllChildren(parsedCollectionId);
     return { msg: "Success", recipes: recipes }; // LEFT OFF: Doesn't work anymore
@@ -206,8 +212,12 @@ class Routes {
   @Router.put("/recipe_access_controls/users/:userId/accessibleContent")
   async grantUserAccessToRecipe(session: WebSessionDoc, recipeId: string, userId: string) {
     const user = WebSession.getUser(session);
-    const parsedRecipeId: ObjectId = new ObjectId(recipeId); // TODO: handle _id parseable as ObjectId
-    const parsedUserId: ObjectId = new ObjectId(userId);
+    const parsedRecipeId: ObjectId = parseInputAsObjectId(recipeId); // TODO: handle _id parseable as ObjectId
+    //assert content existence
+    await Recipe.getRecipeById(parsedRecipeId);
+
+    const parsedUserId: ObjectId = parseInputAsObjectId(userId);
+    await User.userExists(parsedUserId);
     await RecipeModeration.assertIsModerator(parsedRecipeId, user);
     return await AccessControl.putAccess(parsedUserId, parsedRecipeId, ContentType.RECIPE);
   }
@@ -223,8 +233,12 @@ class Routes {
   @Router.put("/collection_access_controls/users/:userId/accessibleContent")
   async grantUserAccessToCollection(session: WebSessionDoc, _id: string, userId: string) {
     const user = WebSession.getUser(session);
-    const parsedCollectionId: ObjectId = new ObjectId(_id); // TODO: handle _id parseable as ObjectId
-    const parsedUserId: ObjectId = new ObjectId(userId);
+    const parsedCollectionId: ObjectId = parseInputAsObjectId(_id); // TODO: handle _id parseable as ObjectId
+    //assert content existence
+    await RecipeCollectionManagement.getCollectionById(parsedCollectionId);
+
+    const parsedUserId: ObjectId = parseInputAsObjectId(userId);
+    await User.userExists(parsedUserId);
     await CollectionModeration.assertIsModerator(parsedCollectionId, user);
     return await AccessControl.putAccess(parsedUserId, parsedCollectionId, ContentType.COLLECTION);
   }
@@ -238,8 +252,12 @@ class Routes {
   @Router.delete("/recipe_access_controls/users/:userId/accessibleContent/:recipeId")
   async removeUserAccessToRecipe(session: WebSessionDoc, recipeId: string, userId: string) {
     const user = WebSession.getUser(session);
-    const parsedRecipeId: ObjectId = new ObjectId(recipeId); // TODO: handle _id parseable as ObjectId
-    const parsedUserId: ObjectId = new ObjectId(userId);
+    const parsedRecipeId: ObjectId = parseInputAsObjectId(recipeId); // TODO: handle _id parseable as ObjectId
+    //assert content existence
+    await Recipe.getRecipeById(parsedRecipeId);
+
+    const parsedUserId: ObjectId = parseInputAsObjectId(userId);
+    await User.userExists(parsedUserId);
     await RecipeModeration.assertIsModerator(parsedRecipeId, user);
     return await AccessControl.removeAccess(parsedUserId, parsedRecipeId, ContentType.RECIPE);
   }
@@ -255,8 +273,12 @@ class Routes {
   @Router.delete("/collection_access_controls/users/:userId/accessibleContent/:_id")
   async removeUserAccessToRecipeCollection(session: WebSessionDoc, _id: string, userId: string) {
     const user = WebSession.getUser(session);
-    const parsedCollectionId: ObjectId = new ObjectId(_id); // TODO: handle _id parseable as ObjectId
-    const parsedUserId: ObjectId = new ObjectId(userId);
+    const parsedCollectionId: ObjectId = parseInputAsObjectId(_id); // TODO: handle _id parseable as ObjectId
+    //assert content existence
+    await RecipeCollectionManagement.getCollectionById(parsedCollectionId);
+
+    const parsedUserId: ObjectId = parseInputAsObjectId(userId);
+    await User.userExists(parsedUserId);
     await CollectionModeration.assertIsModerator(parsedCollectionId, user);
     return await AccessControl.removeAccess(parsedUserId, parsedCollectionId, ContentType.COLLECTION);
   }
